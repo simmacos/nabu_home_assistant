@@ -23,18 +23,19 @@ The system runs distributed across **3 machines** connected over LAN.
 │  HOME ASSISTANT  (server)     │
 │  ─ homeassistant   :8123      │
 │  ─ openwakeword    :10400     │  detects "okay nabu"
-└───────┬───────────────┬──────┘
-        │               │
-        ▼               ▼
-┌──────────────┐ ┌──────────────┐
-│  AI SERVER    │ │  AI SERVER    │
-│  faster-      │ │  piper-tts    │
-│  whisper      │ │  :10200       │
-│  :10300       │ │  text→speech  │
-│  speech→text  │ │  (it_IT       │
-│  (it, large-  │ │   riccardo)   │
-│   v3-turbo)   │ │               │
-└──────────────┘ └──────────────┘
+└───────┬───────┬───────┬──────┘
+        │       │       │
+        ▼       ▼       ▼
+┌────────┐ ┌────────┐ ┌──────────┐
+│ AI SRV │ │ AI SRV │ │  AI SRV   │
+│ faster-│ │ piper- │ │  ollama   │
+│ whisper│ │ tts    │ │  :11434   │
+│ :10300 │ │ :10200 │ │  LLM      │
+│ STT    │ │ TTS    │ │  (Gemma)  │
+│ (it,   │ │ (it_IT │ │  intent / │
+│ v3-    │ │ riccar-│ │  convers. │
+│ turbo) │ │ do)    │ │           │
+└────────┘ └────────┘ └──────────┘
 ```
 
 > **Note:** `home-assistant/` and `ai-server/` can run on the same machine or on separate ones — they are split into distinct compose files for flexibility.
@@ -45,7 +46,7 @@ The system runs distributed across **3 machines** connected over LAN.
 
 1. **Wake word** — the satellite (or `openwakeword`) listens continuously and triggers on the keyword.
 2. **STT** — audio is sent to `faster-whisper` → transcribed to text (Italian).
-3. **Intent** — Home Assistant interprets the text and runs the action (lights, scenes, questions…).
+3. **Intent / conversation** — Home Assistant handles the text. Built-in intents run the action (lights, scenes…); open questions are forwarded to the **Ollama** LLM (Gemma) for a natural-language answer.
 4. **TTS** — the text response goes to `piper-tts` → audio.
 5. **Playback** — the audio returns to the satellite and is played back.
 
@@ -65,6 +66,20 @@ Everything happens **on the LAN**, with zero external connections.
 ```bash
 cd ai-server && docker compose up -d
 ```
+
+**Ollama** — the LLM provider for conversation/intent — runs **natively on the host** (not in compose), on the same AI server.
+
+| Service | Port | Role | Config |
+|---------|------|------|--------|
+| `ollama` | 11434 | LLM (intent / conversation) | model `gemma3:4b` (adjust tag to your model) |
+
+```bash
+# native install (Arch): pacman -S ollama  (or the official script)
+systemctl enable --now ollama
+ollama pull gemma3:4b
+```
+
+In Home Assistant add the **Ollama** integration pointing to `<ai-server-ip>:11434` and select it as the conversation agent.
 
 ### `home-assistant/` — HA core + wake word
 
@@ -113,6 +128,8 @@ In Home Assistant, configure the **Wyoming** integration pointing to the service
 - Piper → `<ai-server-ip>:10200`
 - openWakeWord → `<ha-ip>:10400`
 
+Then add the **Ollama** integration → `<ai-server-ip>:11434` and set it as the conversation agent.
+
 ---
 
 ## Example hardware
@@ -126,6 +143,12 @@ In Home Assistant, configure the **Wyoming** integration pointing to the service
 
 ## Privacy
 
-- **No cloud.** STT, TTS, wake word and intent processing all run entirely locally.
+- **No cloud.** STT, TTS, wake word, intent and the LLM (Ollama/Gemma) all run entirely locally.
 - No dependency on external services (Alexa, Google, OpenAI…).
-- Models (Whisper, Piper, openWakeWord) are downloaded once and stored in local volumes.
+- Models (Whisper, Piper, openWakeWord, Ollama) are downloaded once and stored locally.
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 simmacos
