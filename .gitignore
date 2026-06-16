@@ -1,0 +1,12 @@
+# Volumi dati container (modelli, cache) — grossi, non versionare
+ai-server/whisper/data/
+ai-server/piper/data/
+home-assistant/openwakeword/data/
+home-assistant/openwakeword/custom/
+
+# Config HA reale
+home-assistant/config/
+
+# OS / editor
+.DS_Store
+*.swp

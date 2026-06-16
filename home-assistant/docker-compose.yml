@@ -1,0 +1,25 @@
+services:
+  # Home Assistant (se non lo hai già nel compose)
+  homeassistant:
+    image: lscr.io/linuxserver/homeassistant:latest
+    container_name: homeassistant
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Rome
+    volumes:
+      - /path/to/your/ha/config:/config
+    restart: unless-stopped
+
+  # openWakeWord: Rileva "Alexa" o "Ehi Jarvis"
+  openwakeword:
+    image: rhasspy/wyoming-openwakeword:latest
+    container_name: openwakeword
+    restart: unless-stopped
+    ports:
+      - "10400:10400"
+    command: --model okay_nabu
+    volumes:
+      - ./openwakeword/custom:/custom
+      - ./openwakeword/data:/data

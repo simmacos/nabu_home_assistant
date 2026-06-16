@@ -1,0 +1,6 @@
+[Desktop Entry]
+Exec=/home/<USER>/.config/autostart-screensaver.sh
+Icon=application-x-shellscript
+Name=autostart-screensaver.sh
+Type=Application
+X-KDE-AutostartScript=true
